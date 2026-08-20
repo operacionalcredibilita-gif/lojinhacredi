@@ -13,18 +13,18 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-  apiKey: "AIzaSyDdummyplaceholderkey000000000",
-  authDomain: "sitebcred.firebaseapp.com",
-  databaseURL: "https://sitebcred-default-rtdb.firebaseio.com",
-  projectId: "sitebcred",
-  storageBucket: "sitebcred.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000"
+const firebaseConfig = {
+  apiKey: "AIzaSyBaV1n7hSbs9KCJDnbKHh7U9qr0lFxjkLGM",
+  authDomain: "rck1-6b903.firebaseapp.com",
+  databaseURL: "https://rck1-6b903-default-rtdb.firebaseio.com",
+  projectId: "rck1-6b903",
+  storageBucket: "rck1-6b903.firebasestorage.app",
+  messagingSenderId: "3822101894508",
+  appId: "1:3822101894508:web:f28f2d1e4e8125d966f49",
+  measurementId: "G-D523K5SC00"
 };
-  };
 
-  const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
   function marcarStatusConexao(msg, classe){
