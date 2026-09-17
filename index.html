@@ -382,6 +382,20 @@ table tr:hover td{background:rgba(233,200,115,.03);}
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
 .empty-state .ico{font-size:36px;margin-bottom:10px;}
 
+/* ─── Resumo de saldos (Admin) ─── */
+.saldo-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:4px;}
+.saldo-resumo-item{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
+  background:linear-gradient(160deg,#1c1c19,#161613);border:1px solid var(--border);
+}
+.saldo-resumo-item .pos{font-size:20px;width:26px;text-align:center;flex-shrink:0;}
+.saldo-resumo-item .info{flex:1;min-width:0;}
+.saldo-resumo-item .nm{font-weight:700;font-size:13.5px;color:var(--ivory);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.saldo-resumo-item .nm .pill{margin-left:6px;vertical-align:middle;}
+.saldo-resumo-item .pt{font-family:'Fraunces',Georgia,serif;color:var(--gold-light);font-size:18px;font-variant-numeric:tabular-nums;margin-top:2px;}
+.saldo-resumo-item.inativa{opacity:.55;}
+.saldo-resumo-item.primeira{border-color:rgba(255,216,106,.4);box-shadow:0 0 0 1px rgba(233,200,115,.15) inset;}
+
 @media(max-width:640px){
   .hero-valor{font-size:38px;}
   .tab-btn{font-size:10px;padding:9px 12px;}
@@ -434,7 +448,7 @@ table tr:hover td{background:rgba(233,200,115,.03);}
 
     <div class="grid-2">
       <div class="card">
-        <div class="section-label">Próxima recompensa</div>
+        <div class="section-label" id="dash-proxima-label">Próxima recompensa</div>
         <div id="dash-proxima"></div>
       </div>
       <div class="card">
@@ -506,6 +520,14 @@ table tr:hover td{background:rgba(233,200,115,.03);}
 
   <!-- ADMIN -->
   <div class="view" id="view-admin">
+    <div class="card" style="margin-bottom:18px;">
+      <div class="section-label" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span>Saldo atual das vendedoras</span>
+        <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">Atualizado em tempo real</span>
+      </div>
+      <div class="saldo-resumo-grid" id="admin-resumo-saldos"></div>
+    </div>
+
     <div class="admin-tabs" id="admin-tabs"></div>
 
     <div class="admin-view active" id="admin-vendas">
@@ -826,11 +848,20 @@ function renderTudo(){
 function renderDashboard(){
   const nome=usuarioAtual.vendedora;
   if(usuarioAtual.papel==='admin'){
+    document.getElementById('dash-proxima-label').textContent='Saldo atual das vendedoras';
     document.getElementById('dash-saldo').innerHTML='<span class="num">—</span>';
-    document.getElementById('dash-total-vendido').innerHTML='Faça login como vendedora para ver o painel pessoal. Use a aba <strong>Admin</strong> para gerenciar o sistema.';
-    document.getElementById('dash-proxima').innerHTML='<div class="empty-state">Sem dados pessoais no modo administrador.</div>';
+    document.getElementById('dash-total-vendido').innerHTML='Modo administrador. Use a aba <strong>Admin</strong> para gerenciar o sistema.';
+    const nomes=Object.keys(vendedoras);
+    const lista=nomes.map(n=>({nome:n, saldo:saldoPontos(n), ativa:vendedoras[n] && vendedoras[n].ativo!==false}))
+      .sort((a,b)=>b.saldo-a.saldo);
+    document.getElementById('dash-proxima').innerHTML = lista.length ? lista.map(v=>`
+      <div class="nivel-row ${v.ativa?'desbloqueado':''}">
+        <div class="nivel-info"><div class="nivel-nome">${escHtml(v.nome)}${v.ativa?'':' <span class="pill off">Inativa</span>'}</div><div class="nivel-pts">Saldo atual</div></div>
+        <div class="nivel-status" style="font-family:'Fraunces',Georgia,serif;color:var(--gold-light);font-size:16px;">${fmtPts(v.saldo)} pts</div>
+      </div>`).join('') : '<div class="empty-state">Nenhuma vendedora cadastrada.</div>';
     document.getElementById('dash-ultimas-vendas').innerHTML='';
   } else {
+    document.getElementById('dash-proxima-label').textContent='Próxima recompensa';
     const saldo=saldoPontos(nome);
     const el=document.getElementById('dash-saldo');
     const anterior=el.textContent;
@@ -1175,11 +1206,28 @@ function mudarAdminAba(id){
 }
 function renderAdmin(){
   if(!document.getElementById('admin-tabs').innerHTML) montarAdminTabs();
+  renderAdminResumoSaldos();
   renderAdminVendas();
   renderAdminProdutos();
   renderAdminResgates();
   renderAdminVendedoras();
   renderAdminConfig();
+}
+/* Resumo fixo: saldo ATUAL (já descontando resgates) de cada vendedora, sempre visível no topo da aba Admin */
+function renderAdminResumoSaldos(){
+  const nomes=Object.keys(vendedoras);
+  const lista=nomes.map(n=>({
+    nome:n, saldo:saldoPontos(n), ativa:vendedoras[n] && vendedoras[n].ativo!==false
+  })).sort((a,b)=>b.saldo-a.saldo);
+
+  document.getElementById('admin-resumo-saldos').innerHTML = lista.length ? lista.map((v,i)=>`
+    <div class="saldo-resumo-item ${v.ativa?'':'inativa'} ${i===0&&v.ativa?'primeira':''}">
+      <div class="pos">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</div>
+      <div class="info">
+        <div class="nm">${escHtml(v.nome)}${v.ativa?'':' <span class="pill off">Inativa</span>'}</div>
+        <div class="pt">${fmtPts(v.saldo)} pts</div>
+      </div>
+    </div>`).join('') : '<div class="empty-state">Nenhuma vendedora cadastrada.</div>';
 }
 function renderAdminVendas(){
   const lista=Object.entries(vendas).sort((a,b)=>b[1].criadoEm-a[1].criadoEm);
